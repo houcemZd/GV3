@@ -16,8 +16,9 @@
   </div>
 </div>
 
-<div class="card">
+<div class="card card-highlight">
   <h2>Dernière campagne</h2>
+  <p class="subtitle">Accédez rapidement à la campagne la plus récente et lancez une nouvelle saisie.</p>
   {% if derniere_campagne %}
     <p><a href="{% url 'core:campagne_detail' derniere_campagne.pk %}">{{ derniere_campagne }}</a> — {{ derniere_campagne.get_statut_display }}</p>
   {% else %}
@@ -30,16 +31,19 @@
 
 <div class="card">
   <h2>Alertes stock</h2>
+  <p class="subtitle">Surveillez les ruptures et les quantités proches du seuil minimal.</p>
   {% if stocks_negatifs %}
-    <p style="color:#c62828; font-weight:600;">⚠ {{ stocks_negatifs|length }} type(s) de brique en stock négatif — vérifiez l'ordre des saisies.</p>
+    <p class="alert-inline alert-error">⚠ {{ stocks_negatifs|length }} type(s) de brique en stock négatif — vérifiez l'ordre des saisies.</p>
   {% endif %}
   {% if stocks_sous_seuil %}
-    <table>
-      <tr><th>Type de brique</th><th>Quantité actuelle</th><th>Seuil mini</th></tr>
-      {% for s in stocks_sous_seuil %}
-      <tr><td>{{ s.type_brique.nom }}</td><td>{{ s.quantite_actuelle }}</td><td>{{ s.seuil_mini }}</td></tr>
-      {% endfor %}
-    </table>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Type de brique</th><th>Quantité actuelle</th><th>Seuil mini</th></tr>
+        {% for s in stocks_sous_seuil %}
+        <tr><td>{{ s.type_brique.nom }}</td><td>{{ s.quantite_actuelle }}</td><td>{{ s.seuil_mini }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
   {% else %}
     <p class="empty">Aucune alerte de seuil — tous les stocks sont au-dessus du seuil mini.</p>
   {% endif %}
