@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ campagne }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ campagne }}</h2>
+  <p>Statut : {{ campagne.get_statut_display }} · Du {{ campagne.date_debut }} {% if campagne.date_fin %}au {{ campagne.date_fin }}{% endif %}</p>
+  <p>Zones concernées : {% for z in campagne.zones.all %}{{ z.nom }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+</div>
+
+{% if paires_manquantes %}
+<div class="card" style="border-color:#c62828;">
+  <h2 style="color:#c62828;">⚠ Paire de sous-types incomplète</h2>
+  <p class="helptext">Ces sous-types sont censés toujours être calculés ensemble (ex. paire trapézoïdale X/Y) — l'un manque encore.</p>
+  <table>
+    <tr><th>Zone</th><th>Sous-type calculé</th><th>Sous-type lié manquant</th></tr>
+    {% for zone_nom, present, manquant in paires_manquantes %}
+    <tr><td>{{ zone_nom }}</td><td>{{ present }}</td><td>{{ manquant }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if zones_sans_besoin %}
+<div class="card">
+  <h2>Calcul du besoin</h2>
+  <p class="empty">{{ zones_sans_besoin|length }} zone(s) sans besoin théorique calculé pour le moment.</p>
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:campagne_tableau' campagne.pk %}">Ouvrir le tableau de calcul</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Écarts théorique / réel</h2>
+  {% if lignes_ecart %}
+  <table>
+    <tr><th>Zone</th><th>Sous-type de brique</th><th>Besoin (avec dérive)</th><th>Besoin (sans dérive)</th><th>Impact usure</th><th>Consommation réelle</th><th>Écart total</th><th>Niveau</th></tr>
+    {% for l in lignes_ecart %}
+    <tr>
+      <td>{{ l.zone.nom }}</td>
+      <td>{{ l.sous_type_brique }}</td>
+      <td>{{ l.besoin }}</td>
+      <td>{{ l.besoin_nominal }}</td>
+      <td>{{ l.impact_derive|floatformat:2 }}</td>
+      <td>{{ l.conso }}</td>
+      <td>{{ l.ecart }}</td>
+      <td><span class="tag tag-{{ l.niveau }}">{{ l.niveau }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="helptext">
+    « Impact usure » isole la part du besoin théorique due à la dérive de géométrie du four
+    (diamètre mesuré vs diamètre nominal de conception de la zone) — le reste de l'écart avec le réel
+    reflète le comportement de consommation proprement dit.
+  </p>
+  {% else %}
+    <p class="empty">Aucun besoin théorique calculé pour le moment.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="{% url 'core:campagne_tableau' campagne.pk %}">Ouvrir le tableau de calcul</a>
+    <a class="btn" href="{% url 'core:consommation_create' campagne.pk %}">+ Ressaisir une consommation réelle</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Consommations réelles saisies</h2>
+  {% if consommations %}
+  <table>
+    <tr><th>Zone</th><th>Sous-type de brique</th><th>Quantité posée</th><th>Date de saisie</th><th>Commentaire</th></tr>
+    {% for c in consommations %}
+    <tr>
+      <td>{{ c.zone.nom }}</td>
+      <td>{{ c.sous_type_brique }}</td>
+      <td>{{ c.quantite_posee }}</td>
+      <td>{{ c.date_saisie }}</td>
+      <td>{{ c.commentaire|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucune consommation saisie pour le moment.</p>
+  {% endif %}
+</div>
+{% endblock %}

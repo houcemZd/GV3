@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Calcul du besoin — {{ zone }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Calcul du besoin théorique — {{ zone.nom }}</h2>
+  <p class="helptext">
+    Diamètre et épaisseur sont pré-remplis depuis la configuration de la zone, mais modifiables ici :
+    c'est cette valeur, propre à la campagne, qui sera conservée pour l'analyse des écarts dans le temps.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="btn-row">
+      <button class="btn" type="submit">Calculer et enregistrer</button>
+      <a class="btn btn-secondary" href="{% url 'core:campagne_detail' campagne.pk %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

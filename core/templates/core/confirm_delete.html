@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Confirmer la suppression{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Confirmer la suppression</h2>
+  <p>Voulez-vous vraiment supprimer <strong>{{ objet }}</strong> ? Cette action est définitive.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="btn-row">
+      <button class="btn btn-danger" type="submit">Oui, supprimer</button>
+      <a class="btn btn-secondary" href="javascript:history.back()">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

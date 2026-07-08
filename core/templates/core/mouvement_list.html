@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Mouvements de stock{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Historique des mouvements de stock</h2>
+  {% if mouvements %}
+  <table>
+    <tr><th>Date</th><th>Type de brique</th><th>Mouvement</th><th>Quantité</th><th>Référence</th></tr>
+    {% for m in mouvements %}
+    <tr>
+      <td>{{ m.date }}</td>
+      <td>{{ m.sous_type_brique }}</td>
+      <td>{{ m.get_type_mouvement_display }}</td>
+      <td>{{ m.quantite }}</td>
+      <td>{{ m.reference|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucun mouvement enregistré.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="{% url 'core:stock_list' %}">Retour au stock</a>
+  </div>
+</div>
+{% endblock %}

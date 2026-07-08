@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Stock magasin{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Stock magasin</h2>
+  {% if stocks %}
+  <table>
+    <tr><th>Type de brique</th><th>Quantité actuelle</th><th>Seuil mini</th><th>Alerte</th></tr>
+    {% for s in stocks %}
+    <tr>
+      <td>{{ s.sous_type_brique }}</td>
+      <td>{{ s.quantite_actuelle }}</td>
+      <td>{{ s.seuil_mini }}</td>
+      <td>
+        {% if s.negatif %}<span class="tag tag-rouge">stock négatif</span>
+        {% elif s.sous_seuil %}<span class="tag tag-orange">sous seuil</span>
+        {% else %}<span class="tag tag-vert">OK</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucun stock enregistré pour le moment.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:stock_entree' %}">+ Entrée de stock (réception fournisseur)</a>
+    <a class="btn btn-secondary" href="{% url 'core:stock_ajustement' %}">Ajustement d'inventaire</a>
+    <a class="btn btn-secondary" href="{% url 'core:mouvement_list' %}">Historique des mouvements</a>
+  </div>
+</div>
+{% endblock %}

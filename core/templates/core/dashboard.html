@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="value">{{ nb_campagnes_en_cours }}</div>
+    <div class="label">Campagne(s) en cours</div>
+  </div>
+  <div class="kpi">
+    <div class="value">{{ stocks_sous_seuil|length }}</div>
+    <div class="label">Type(s) de brique sous seuil</div>
+  </div>
+  <div class="kpi">
+    <div class="value">{{ ecart_cumule|floatformat:0 }}</div>
+    <div class="label">Écart cumulé (pièces, réel − théorique)</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Dernière campagne</h2>
+  {% if derniere_campagne %}
+    <p><a href="{% url 'core:campagne_detail' derniere_campagne.pk %}">{{ derniere_campagne }}</a> — {{ derniere_campagne.get_statut_display }}</p>
+  {% else %}
+    <p class="empty">Aucune campagne enregistrée pour le moment.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:campagne_create' %}">+ Nouvelle campagne</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Alertes stock</h2>
+  {% if stocks_negatifs %}
+    <p style="color:#c62828; font-weight:600;">⚠ {{ stocks_negatifs|length }} type(s) de brique en stock négatif — vérifiez l'ordre des saisies.</p>
+  {% endif %}
+  {% if stocks_sous_seuil %}
+    <table>
+      <tr><th>Type de brique</th><th>Quantité actuelle</th><th>Seuil mini</th></tr>
+      {% for s in stocks_sous_seuil %}
+      <tr><td>{{ s.type_brique.nom }}</td><td>{{ s.quantite_actuelle }}</td><td>{{ s.seuil_mini }}</td></tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="empty">Aucune alerte de seuil — tous les stocks sont au-dessus du seuil mini.</p>
+  {% endif %}
+</div>
+{% endblock %}

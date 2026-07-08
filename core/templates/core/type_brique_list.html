@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Types de briques{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Types de briques (familles)</h2>
+  <p class="helptext">
+    Un type de brique regroupe plusieurs sous-types (dimensions, formule et taux de chute propres à chacun) —
+    voir <a href="{% url 'core:sous_type_list' %}">Sous-types</a>.
+  </p>
+  {% if types %}
+  <table>
+    <tr><th>Nom</th><th>Fournisseur</th><th>Sous-types</th><th></th></tr>
+    {% for t in types %}
+    <tr>
+      <td>{{ t.nom }}</td>
+      <td>{{ t.fournisseur_defaut|default:"—" }}</td>
+      <td>
+        {% with sous_types=t.sous_types.all %}
+          {% if sous_types %}{{ sous_types|length }} : {% for st in sous_types %}{{ st.nom }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% else %}<span class="muted">aucun sous-type configuré</span>{% endif %}
+        {% endwith %}
+      </td>
+      <td>
+        <a href="{% url 'core:type_brique_update' t.pk %}">Modifier</a> ·
+        <a href="{% url 'core:type_brique_delete' t.pk %}">Supprimer</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucun type de brique enregistré.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:type_brique_create' %}">+ Nouveau type de brique</a>
+    <a class="btn btn-secondary" href="{% url 'core:sous_type_create' %}">+ Nouveau sous-type</a>
+  </div>
+</div>
+{% endblock %}

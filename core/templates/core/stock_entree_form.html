@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Entrée de stock{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Entrée de stock — réception fournisseur</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="btn-row">
+      <button class="btn" type="submit">Enregistrer l'entrée</button>
+      <a class="btn btn-secondary" href="{% url 'core:stock_list' %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

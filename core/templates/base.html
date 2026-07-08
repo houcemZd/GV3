@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}Gestion Briques Réfractaires{% endblock %}</title>
+<style>
+  :root {
+    --dark: #1F3864;
+    --dark-hover: #16294a;
+    --grey: #f4f5f7;
+    --border: #dfe3e8;
+    --vert: #2e7d32; --vert-bg: #e8f5e9;
+    --orange: #b26a00; --orange-bg: #fff3e0;
+    --rouge: #c62828; --rouge-bg: #fdecea;
+    --text: #232629;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin: 0; background: var(--grey); color: var(--text); }
+  header { background: var(--dark); color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  nav a { color: #dbe4f5; text-decoration: none; margin-left: 18px; font-size: 14px; }
+  nav a:hover { color: white; text-decoration: underline; }
+  main { max-width: 1080px; margin: 24px auto; padding: 0 20px 60px; }
+  .card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; }
+  h2 { color: var(--dark); font-size: 20px; margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  th { background: #eef1f6; color: #333; font-weight: 600; }
+  .btn { display: inline-block; background: var(--dark); color: white; border: none; padding: 8px 16px;
+         border-radius: 6px; font-size: 14px; text-decoration: none; cursor: pointer; }
+  .btn:hover { background: var(--dark-hover); }
+  .btn-secondary { background: white; color: var(--dark); border: 1px solid var(--dark); }
+  .btn-danger { background: var(--rouge); }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  form p { margin: 12px 0; }
+  label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #444; }
+  input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; }
+  .helptext { font-size: 12px; color: #777; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .tag-vert { background: var(--vert-bg); color: var(--vert); }
+  .tag-orange { background: var(--orange-bg); color: var(--orange); }
+  .tag-rouge { background: var(--rouge-bg); color: var(--rouge); }
+  .tag-inconnu { background: #eee; color: #777; }
+  .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .kpi { flex: 1; min-width: 160px; background: white; border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .kpi .value { font-size: 26px; font-weight: 700; color: var(--dark); }
+  .kpi .label { font-size: 13px; color: #666; }
+  .messages { list-style: none; padding: 0; margin: 0 0 16px; }
+  .messages li { padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 14px; }
+  .messages .success { background: var(--vert-bg); color: var(--vert); }
+  .messages .error { background: var(--rouge-bg); color: var(--rouge); }
+  .messages .warning { background: var(--orange-bg); color: var(--orange); }
+  .messages .info { background: #e3edfb; color: var(--dark); }
+  .empty { color: #888; font-style: italic; padding: 10px 0; }
+  .muted { color: #888; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧱 Gestion Briques Réfractaires — Four Rotatif</h1>
+  <nav>
+    <a href="{% url 'core:dashboard' %}">Dashboard</a>
+    <a href="{% url 'core:zone_list' %}">Zones</a>
+    <a href="{% url 'core:type_brique_list' %}">Types de briques</a>
+    <a href="{% url 'core:sous_type_list' %}">Sous-types</a>
+    <a href="{% url 'core:campagne_list' %}">Campagnes</a>
+    <a href="{% url 'core:stock_list' %}">Stock</a>
+  </nav>
+</header>
+<main>
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

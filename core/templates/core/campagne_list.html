@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Campagnes{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Historique des campagnes</h2>
+  {% if campagnes %}
+  <table>
+    <tr><th>Four</th><th>Début</th><th>Fin</th><th>Statut</th><th>Zones</th><th></th></tr>
+    {% for c in campagnes %}
+    <tr>
+      <td>{{ c.four.nom }}</td>
+      <td>{{ c.date_debut }}</td>
+      <td>{{ c.date_fin|default:"—" }}</td>
+      <td>{{ c.get_statut_display }}</td>
+      <td>{{ c.zones.count }}</td>
+      <td><a href="{% url 'core:campagne_detail' c.pk %}">Détail</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucune campagne enregistrée.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:campagne_create' %}">+ Nouvelle campagne</a>
+  </div>
+</div>
+{% endblock %}

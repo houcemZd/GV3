@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Fours{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Fours</h2>
+  {% if fours %}
+  <table>
+    <tr><th>Nom</th><th>Statut</th><th></th></tr>
+    {% for four in fours %}
+    <tr>
+      <td>{{ four.nom }}</td>
+      <td>{{ four.get_statut_display }}</td>
+      <td>
+        <a href="{% url 'core:four_update' four.pk %}">Modifier</a> ·
+        <a href="{% url 'core:four_delete' four.pk %}">Supprimer</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucun four enregistré.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:four_create' %}">+ Nouveau four</a>
+  </div>
+</div>
+{% endblock %}

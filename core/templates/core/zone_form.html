@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Zone{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{% if instance %}Modifier la zone{% else %}Nouvelle zone{% endif %}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="btn-row">
+      <button class="btn" type="submit">Enregistrer</button>
+      <a class="btn btn-secondary" href="{% url 'core:zone_list' %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

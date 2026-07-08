@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sous-types de briques{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Sous-types de briques</h2>
+  {% if sous_types %}
+  <table>
+    <tr><th>Type</th><th>Sous-type</th><th>Format</th><th>Dimensions (L×l×h)</th><th>Taux de chute</th><th>Lié à</th><th>Formule</th><th></th></tr>
+    {% for st in sous_types %}
+    <tr>
+      <td>{{ st.type_brique.nom }}</td>
+      <td>{{ st.nom }}</td>
+      <td>{{ st.get_format_display }}</td>
+      <td>{{ st.longueur }}×{{ st.largeur }}×{{ st.hauteur }} mm</td>
+      <td>{{ st.taux_chute }}</td>
+      <td>
+        {% with lies=st.sous_types_lies.all %}
+          {% if lies %}{% for l in lies %}{{ l.nom }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% else %}<span class="muted">—</span>{% endif %}
+        {% endwith %}
+      </td>
+      <td class="muted">{{ st.formule_calcul|truncatechars:40 }}</td>
+      <td>
+        <a href="{% url 'core:sous_type_update' st.pk %}">Modifier</a> ·
+        <a href="{% url 'core:sous_type_delete' st.pk %}">Supprimer</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucun sous-type enregistré. Créez d'abord un type de brique.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:sous_type_create' %}">+ Nouveau sous-type</a>
+    <a class="btn btn-secondary" href="{% url 'core:type_brique_list' %}">Gérer les types (familles)</a>
+  </div>
+</div>
+{% endblock %}

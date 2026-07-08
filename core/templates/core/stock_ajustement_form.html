@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Ajustement d'inventaire{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Ajustement d'inventaire</h2>
+  <p class="helptext">
+    À utiliser pour une casse, une perte, ou un écart constaté lors d'un comptage physique —
+    pas pour une réception fournisseur (voir "Entrée de stock") ni une consommation (voir la campagne concernée).
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="btn-row">
+      <button class="btn" type="submit">Enregistrer l'ajustement</button>
+      <a class="btn btn-secondary" href="{% url 'core:stock_list' %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

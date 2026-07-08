@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Saisie consommation réelle{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Ressaisie de la consommation réelle — {{ campagne }}</h2>
+  <p class="helptext">Saisissez ici les valeurs relevées sur papier lors de la campagne.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="btn-row">
+      <button class="btn" type="submit">Enregistrer</button>
+      <a class="btn btn-secondary" href="{% url 'core:campagne_detail' campagne.pk %}">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

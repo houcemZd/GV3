@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Sous-type de brique{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{% if instance %}Modifier le sous-type{% else %}Nouveau sous-type de brique{% endif %}</h2>
+  <p class="helptext">
+    Variables disponibles dans la formule : diametre, longueur_zone, epaisseur (valeurs de la campagne),
+    longueur, largeur, hauteur, taux_chute (valeurs de ce sous-type), PI.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    {% if resultat_test %}
+      {% if resultat_test.0 %}
+        <div class="messages"><li class="success" style="list-style:none;">
+          Test réussi avec les valeurs d'exemple (diametre={{ valeurs_exemple.diametre }},
+          longueur_zone={{ valeurs_exemple.longueur_zone }}, epaisseur={{ valeurs_exemple.epaisseur }}) :
+          résultat = {{ resultat_test.1|floatformat:2 }} pièces.
+        </li></div>
+      {% else %}
+        <div class="messages"><li class="error" style="list-style:none;">{{ resultat_test.1 }}</li></div>
+      {% endif %}
+    {% endif %}
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" type="submit" name="action" value="tester">Tester la formule (aperçu)</button>
+      <button class="btn" type="submit" name="action" value="enregistrer">Enregistrer</button>
+      <a class="btn btn-secondary" href="{% url 'core:sous_type_list' %}">Annuler</a>
+    </div>
+    <p class="helptext">La formule est de toute façon vérifiée automatiquement à l'enregistrement (avec les valeurs d'exemple) ; le bouton "Tester" permet juste de voir le résultat avant de valider.</p>
+  </form>
+</div>
+{% endblock %}
