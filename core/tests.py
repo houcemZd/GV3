@@ -453,10 +453,12 @@ class FormulesTypeBriqueTests(TestCase):
             formule_sous_type_3=self.f3,
             formule_sous_type_4=self.f4,
         )
-        st1 = models.SousTypeBrique.objects.create(
+        st1 = models.SousTypeBrique(
             type_brique=tb, nom="ST-1", longueur=300, largeur=150, hauteur=80,
             poids_unitaire=5, formule_calcul="",
         )
+        st1.full_clean()
+        st1.save()
         campagne = models.Campagne.objects.create(four=four, date_debut="2026-01-01")
         campagne.zones.add(zone)
 
