@@ -5,7 +5,7 @@
   <h2>Sous-types de briques</h2>
   {% if sous_types %}
   <table>
-    <tr><th>Type</th><th>Sous-type</th><th>Format</th><th>Dimensions (L×l×h)</th><th>Taux de chute</th><th>Lié à</th><th>Formule</th><th></th></tr>
+    <tr><th>Type</th><th>Sous-type</th><th>Format</th><th>Dimensions (X×Y×Z)</th><th>Taux de chute</th><th>Lié à</th><th>Formule</th><th></th></tr>
     {% for st in sous_types %}
     <tr>
       <td>{{ st.type_brique.nom }}</td>
@@ -19,7 +19,13 @@
           {% else %}<span class="muted">—</span>{% endif %}
         {% endwith %}
       </td>
-      <td class="muted">{{ st.formule_calcul|truncatechars:40 }}</td>
+      <td class="muted">
+        {% if st.formule_predefinie %}
+          {{ st.formule_predefinie.nom }} · {{ st.formule_predefinie.expression|truncatechars:40 }}
+        {% else %}
+          {{ st.formule_calcul|truncatechars:40 }}
+        {% endif %}
+      </td>
       <td>
         <a href="{% url 'core:sous_type_update' st.pk %}">Modifier</a> ·
         <a href="{% url 'core:sous_type_delete' st.pk %}">Supprimer</a>

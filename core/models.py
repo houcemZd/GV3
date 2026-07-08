@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -24,11 +26,68 @@ class TypeBrique(models.Model):
     """
     Famille de briques réfractaires (ex. "Brique isolante zone cuisson").
     Un type de brique regroupe généralement plusieurs sous-types (souvent 4)
-    qui partagent le même fournisseur mais diffèrent par leurs dimensions,
-    leur formule de calcul et leur taux de chute — voir SousTypeBrique.
+    qui partagent le même fournisseur. Les formules ST-1..ST-4 sont définies
+    ici et appliquées automatiquement aux sous-types correspondants.
     """
     nom = models.CharField(max_length=100)
     fournisseur_defaut = models.CharField(max_length=150, blank=True)
+    formule_sous_type_1 = models.ForeignKey(
+        "Formule", on_delete=models.PROTECT, null=True, blank=True, related_name="types_briques_st1"
+    )
+    formule_sous_type_2 = models.ForeignKey(
+        "Formule", on_delete=models.PROTECT, null=True, blank=True, related_name="types_briques_st2"
+    )
+    formule_sous_type_3 = models.ForeignKey(
+        "Formule", on_delete=models.PROTECT, null=True, blank=True, related_name="types_briques_st3"
+    )
+    formule_sous_type_4 = models.ForeignKey(
+        "Formule", on_delete=models.PROTECT, null=True, blank=True, related_name="types_briques_st4"
+    )
+
+    class Meta:
+        ordering = ["nom"]
+
+    def __str__(self):
+        return self.nom
+
+    def clean(self):
+        super().clean()
+        formules = [
+            self.formule_sous_type_1,
+            self.formule_sous_type_2,
+            self.formule_sous_type_3,
+            self.formule_sous_type_4,
+        ]
+        if any(formules) and not all(formules):
+            raise ValidationError("Les 4 sous-types ST-1 à ST-4 doivent tous avoir une formule.")
+        if all(formules):
+            ids = [f.id for f in formules if f]
+            if len(set(ids)) != 4:
+                raise ValidationError("Chaque sous-type ST-1 à ST-4 doit avoir une formule différente.")
+
+    def formule_pour_sous_type_nom(self, nom):
+        match = re.match(r"^\s*ST[-\s]?([1-4])\s*$", nom or "", flags=re.IGNORECASE)
+        if not match:
+            return None
+        return getattr(self, f"formule_sous_type_{match.group(1)}", None)
+
+    def formule_mapping(self):
+        return [
+            ("ST-1", self.formule_sous_type_1),
+            ("ST-2", self.formule_sous_type_2),
+            ("ST-3", self.formule_sous_type_3),
+            ("ST-4", self.formule_sous_type_4),
+        ]
+
+
+class Formule(models.Model):
+    nom = models.CharField(max_length=120, unique=True)
+    expression = models.TextField(
+        help_text=(
+            "Variables disponibles : diametre, longueur_zone, epaisseur, longueur, "
+            "largeur, hauteur, taux_chute, PI."
+        )
+    )
 
     class Meta:
         ordering = ["nom"]
@@ -59,7 +118,11 @@ class SousTypeBrique(models.Model):
     hauteur = models.DecimalField(max_digits=10, decimal_places=2, help_text="mm")
     poids_unitaire = models.DecimalField(max_digits=10, decimal_places=3, help_text="kg")
 
+    formule_predefinie = models.ForeignKey(
+        Formule, on_delete=models.PROTECT, null=True, blank=True, related_name="sous_types"
+    )
     formule_calcul = models.TextField(
+        blank=True,
         help_text=(
             "Expression libre. Variables disponibles : diametre, longueur_zone, "
             "epaisseur, longueur, largeur, hauteur, taux_chute, PI. "
@@ -92,11 +155,19 @@ class SousTypeBrique(models.Model):
 
     def clean(self):
         super().clean()
+        formule_type = None
+        if self.type_brique_id and self.nom:
+            formule_type = self.type_brique.formule_pour_sous_type_nom(self.nom)
+        if formule_type and not self.formule_predefinie_id:
+            self.formule_predefinie = formule_type
+        if self.formule_predefinie_id:
+            self.formule_calcul = self.formule_predefinie.expression
+        if not self.formule_calcul or not self.formule_calcul.strip():
+            raise ValidationError({"formule_calcul": "Veuillez saisir une formule ou sélectionner une formule prédéfinie."})
+
         # Si les dimensions ne sont pas encore renseignées, on laisse les
         # erreurs "champ requis" normales s'afficher sans tester la formule.
         if self.longueur is None or self.largeur is None or self.hauteur is None:
-            return
-        if not self.formule_calcul or not self.formule_calcul.strip():
             return
 
         from .formula import VALEURS_EXEMPLE, evaluer_formule

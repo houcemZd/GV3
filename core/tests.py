@@ -217,6 +217,16 @@ class SousTypePaireTests(TestCase):
             longueur=200, largeur=69, hauteur=74, poids_unitaire=8.6,
             formule_calcul="diametre / longueur * 1.05",
         )
+        self.brique_x1 = models.SousTypeBrique.objects.create(
+            type_brique=type_brique, nom="X1", format="cintree",
+            longueur=198, largeur=67, hauteur=76, poids_unitaire=8.2,
+            formule_calcul="diametre / longueur * 0.98",
+        )
+        self.brique_y1 = models.SousTypeBrique.objects.create(
+            type_brique=type_brique, nom="Y1", format="cintree",
+            longueur=202, largeur=70, hauteur=75, poids_unitaire=8.4,
+            formule_calcul="diametre / longueur * 1.02",
+        )
         self.brique_x.sous_types_lies.add(self.brique_y)
 
         self.campagne = models.Campagne.objects.create(four=self.four, date_debut="2026-01-01")
@@ -237,6 +247,15 @@ class SousTypePaireTests(TestCase):
             models.BesoinTheorique.objects.filter(sous_type_brique=self.brique_y).exists(),
             "Le sous-type lié Y aurait dû être calculé automatiquement avec X",
         )
+
+    def test_calculer_besoin_pour_x_calcule_toute_la_famille(self):
+        response = self.client.post(
+            f"/campagnes/{self.campagne.id}/zones/{self.zone.id}/calculer/",
+            {"sous_type_brique": self.brique_x.id, "diametre_utilise": "4500", "epaisseur_garnissage_utilisee": "200"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(models.BesoinTheorique.objects.filter(sous_type_brique=self.brique_x1).exists())
+        self.assertTrue(models.BesoinTheorique.objects.filter(sous_type_brique=self.brique_y1).exists())
 
     def test_pas_de_paire_manquante_apres_calcul(self):
         self.client.post(
@@ -363,3 +382,101 @@ class CampagneClotureeTests(TestCase):
         )
         self.assertEqual(models.ConsommationReelle.objects.count(), 0)
         self.assertRedirects(response, f"/campagnes/{self.campagne.id}/")
+
+
+class FormulesTypeBriqueTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.f1 = models.Formule.objects.create(nom="F1", expression="diametre")
+        self.f2 = models.Formule.objects.create(nom="F2", expression="diametre * 1.01")
+        self.f3 = models.Formule.objects.create(nom="F3", expression="diametre * 1.02")
+        self.f4 = models.Formule.objects.create(nom="F4", expression="diametre * 1.03")
+
+    def test_creation_type_brique_avec_4_formules(self):
+        response = self.client.post("/types-briques/nouveau/", {
+            "nom": "Type Configuré",
+            "fournisseur_defaut": "ACME",
+            "formule_sous_type_1": self.f1.id,
+            "formule_sous_type_2": self.f2.id,
+            "formule_sous_type_3": self.f3.id,
+            "formule_sous_type_4": self.f4.id,
+        })
+        self.assertEqual(response.status_code, 302)
+        tb = models.TypeBrique.objects.get(nom="Type Configuré")
+        self.assertEqual(tb.formule_sous_type_1, self.f1)
+        self.assertEqual(tb.formule_sous_type_4, self.f4)
+
+    def test_refus_si_formules_dupliquees_sur_les_4_slots(self):
+        response = self.client.post("/types-briques/nouveau/", {
+            "nom": "Type invalide",
+            "fournisseur_defaut": "ACME",
+            "formule_sous_type_1": self.f1.id,
+            "formule_sous_type_2": self.f1.id,
+            "formule_sous_type_3": self.f3.id,
+            "formule_sous_type_4": self.f4.id,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Chaque sous-type ST-1 à ST-4 doit avoir une formule différente")
+
+    def test_sous_type_st_herite_automatiquement_de_la_formule_du_type(self):
+        tb = models.TypeBrique.objects.create(
+            nom="Type A",
+            formule_sous_type_1=self.f1,
+            formule_sous_type_2=self.f2,
+            formule_sous_type_3=self.f3,
+            formule_sous_type_4=self.f4,
+        )
+        sous_type = models.SousTypeBrique(
+            type_brique=tb,
+            nom="ST-1",
+            format="droite",
+            longueur=300,
+            largeur=150,
+            hauteur=80,
+            poids_unitaire=5,
+            formule_calcul="",
+        )
+        sous_type.full_clean()
+        sous_type.save()
+        self.assertEqual(sous_type.formule_predefinie, self.f1)
+        self.assertEqual(sous_type.formule_calcul, self.f1.expression)
+
+    def test_calcul_besoin_fonctionne_avec_formule_predefinie(self):
+        four = models.Four.objects.create(nom="Four 1")
+        zone = models.Zone.objects.create(
+            four=four, nom="Zone A", diametre_nominal=3000, longueur=1000, position=1,
+        )
+        tb = models.TypeBrique.objects.create(
+            nom="Type B",
+            formule_sous_type_1=self.f1,
+            formule_sous_type_2=self.f2,
+            formule_sous_type_3=self.f3,
+            formule_sous_type_4=self.f4,
+        )
+        st1 = models.SousTypeBrique(
+            type_brique=tb, nom="ST-1", longueur=300, largeur=150, hauteur=80,
+            poids_unitaire=5, formule_calcul="",
+        )
+        st1.full_clean()
+        st1.save()
+        campagne = models.Campagne.objects.create(four=four, date_debut="2026-01-01")
+        campagne.zones.add(zone)
+
+        response = self.client.post(
+            f"/campagnes/{campagne.id}/zones/{zone.id}/calculer/",
+            {"sous_type_brique": st1.id, "diametre_utilise": "2950", "epaisseur_garnissage_utilisee": "180"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(models.BesoinTheorique.objects.filter(campagne=campagne, zone=zone, sous_type_brique=st1).exists())
+
+    def test_liste_types_affiche_mapping_formules(self):
+        models.TypeBrique.objects.create(
+            nom="Type C",
+            formule_sous_type_1=self.f1,
+            formule_sous_type_2=self.f2,
+            formule_sous_type_3=self.f3,
+            formule_sous_type_4=self.f4,
+        )
+        response = self.client.get("/types-briques/")
+        self.assertContains(response, "ST-1: F1")
+        self.assertContains(response, "ST-4: F4")

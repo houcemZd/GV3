@@ -28,7 +28,39 @@ class TypeBriqueForm(forms.ModelForm):
     dimensions, la formule et le taux de chute vivent sur les sous-types."""
     class Meta:
         model = models.TypeBrique
-        fields = ["nom", "fournisseur_defaut"]
+        fields = [
+            "nom", "fournisseur_defaut",
+            "formule_sous_type_1", "formule_sous_type_2", "formule_sous_type_3", "formule_sous_type_4",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for i in range(1, 5):
+            field = self.fields[f"formule_sous_type_{i}"]
+            field.queryset = models.Formule.objects.all()
+            field.required = True
+            field.label = f"Formule ST-{i}"
+            field.help_text = f"Formule appliquée automatiquement au sous-type ST-{i}."
+
+    def clean(self):
+        cleaned_data = super().clean()
+        ids = []
+        for i in range(1, 5):
+            formule = cleaned_data.get(f"formule_sous_type_{i}")
+            if formule:
+                ids.append(formule.id)
+        if len(ids) == 4 and len(set(ids)) != 4:
+            raise forms.ValidationError("Chaque sous-type ST-1 à ST-4 doit avoir une formule différente.")
+        return cleaned_data
+
+
+class FormuleForm(forms.ModelForm):
+    class Meta:
+        model = models.Formule
+        fields = ["nom", "expression"]
+        widgets = {
+            "expression": forms.Textarea(attrs={"rows": 4}),
+        }
 
 
 class SousTypeBriqueForm(forms.ModelForm):
@@ -36,7 +68,7 @@ class SousTypeBriqueForm(forms.ModelForm):
         model = models.SousTypeBrique
         fields = [
             "type_brique", "nom", "format", "longueur", "largeur", "hauteur",
-            "poids_unitaire", "formule_calcul", "taux_chute", "sous_types_lies",
+            "poids_unitaire", "formule_predefinie", "formule_calcul", "taux_chute", "sous_types_lies",
         ]
         widgets = {
             "formule_calcul": forms.Textarea(attrs={"rows": 3}),
@@ -45,6 +77,11 @@ class SousTypeBriqueForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["longueur"].label = "Dimension X (mm)"
+        self.fields["largeur"].label = "Dimension Y (mm)"
+        self.fields["hauteur"].label = "Dimension Z (mm)"
+        self.fields["formule_predefinie"].queryset = models.Formule.objects.all()
+        self.fields["formule_calcul"].required = False
         queryset = models.SousTypeBrique.objects.select_related("type_brique")
         if self.instance and self.instance.pk:
             queryset = queryset.exclude(pk=self.instance.pk)

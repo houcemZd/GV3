@@ -45,7 +45,7 @@
             <th>Diamètre mesuré (mm)</th>
             <th>Épaisseur garnissage (mm)</th>
             {% for st in colonnes %}
-              <th title="{{ st.type_brique.nom }} — {{ st.longueur }}×{{ st.largeur }}×{{ st.hauteur }} mm, taux de chute {{ st.taux_chute }}">{{ st.nom }}</th>
+              <th title="{{ st.type_brique.nom }} — X={{ st.longueur }}, Y={{ st.largeur }}, Z={{ st.hauteur }} mm, taux de chute {{ st.taux_chute }}">{{ st.nom }}</th>
             {% endfor %}
           </tr>
         </thead>

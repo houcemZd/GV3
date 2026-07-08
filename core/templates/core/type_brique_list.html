@@ -4,12 +4,12 @@
 <div class="card">
   <h2>Types de briques (familles)</h2>
   <p class="helptext">
-    Un type de brique regroupe plusieurs sous-types (dimensions, formule et taux de chute propres à chacun) —
-    voir <a href="{% url 'core:sous_type_list' %}">Sous-types</a>.
+    Un type de brique regroupe plusieurs sous-types ; les formules ST-1 à ST-4 sont configurées ici
+    puis appliquées automatiquement aux sous-types correspondants.
   </p>
   {% if types %}
   <table>
-    <tr><th>Nom</th><th>Fournisseur</th><th>Sous-types</th><th></th></tr>
+    <tr><th>Nom</th><th>Fournisseur</th><th>Sous-types</th><th>Mapping formules</th><th></th></tr>
     {% for t in types %}
     <tr>
       <td>{{ t.nom }}</td>
@@ -19,6 +19,12 @@
           {% if sous_types %}{{ sous_types|length }} : {% for st in sous_types %}{{ st.nom }}{% if not forloop.last %}, {% endif %}{% endfor %}
           {% else %}<span class="muted">aucun sous-type configuré</span>{% endif %}
         {% endwith %}
+      </td>
+      <td>
+        <div class="muted">ST-1: {{ t.formule_sous_type_1.nom|default:"—" }}</div>
+        <div class="muted">ST-2: {{ t.formule_sous_type_2.nom|default:"—" }}</div>
+        <div class="muted">ST-3: {{ t.formule_sous_type_3.nom|default:"—" }}</div>
+        <div class="muted">ST-4: {{ t.formule_sous_type_4.nom|default:"—" }}</div>
       </td>
       <td>
         <a href="{% url 'core:type_brique_update' t.pk %}">Modifier</a> ·
@@ -32,6 +38,7 @@
   {% endif %}
   <div class="btn-row">
     <a class="btn" href="{% url 'core:type_brique_create' %}">+ Nouveau type de brique</a>
+    <a class="btn btn-secondary" href="{% url 'core:formule_create' %}">+ Nouvelle formule</a>
     <a class="btn btn-secondary" href="{% url 'core:sous_type_create' %}">+ Nouveau sous-type</a>
   </div>
 </div>

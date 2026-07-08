@@ -144,11 +144,34 @@ def zone_delete(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# TypeBrique (famille — nom + fournisseur seulement)
+# Formules prédéfinies
+# ---------------------------------------------------------------------------
+
+def formule_list(request):
+    return render(request, "core/formule_list.html", {"formules": models.Formule.objects.all()})
+
+
+def formule_form(request, pk=None):
+    instance = get_object_or_404(models.Formule, pk=pk) if pk else None
+    return _simple_crud_form(
+        request, model=models.Formule, form_class=forms.FormuleForm, instance=instance,
+        template="core/formule_form.html", list_url_name="formule_list", success_message="Formule enregistrée.",
+    )
+
+
+def formule_delete(request, pk):
+    formule = get_object_or_404(models.Formule, pk=pk)
+    return _simple_delete(request, obj=formule, template="core/confirm_delete.html", list_url_name="formule_list")
+
+
+# ---------------------------------------------------------------------------
+# TypeBrique (famille + mapping formules ST-1..ST-4)
 # ---------------------------------------------------------------------------
 
 def type_brique_list(request):
-    types = models.TypeBrique.objects.prefetch_related("sous_types")
+    types = models.TypeBrique.objects.prefetch_related("sous_types").select_related(
+        "formule_sous_type_1", "formule_sous_type_2", "formule_sous_type_3", "formule_sous_type_4"
+    )
     return render(request, "core/type_brique_list.html", {"types": types})
 
 
@@ -170,7 +193,7 @@ def type_brique_delete(request, pk):
 # ---------------------------------------------------------------------------
 
 def sous_type_list(request):
-    sous_types = models.SousTypeBrique.objects.select_related("type_brique").prefetch_related("sous_types_lies")
+    sous_types = models.SousTypeBrique.objects.select_related("type_brique", "formule_predefinie").prefetch_related("sous_types_lies")
     return render(request, "core/sous_type_list.html", {"sous_types": sous_types})
 
 
@@ -187,6 +210,19 @@ def sous_type_form(request, pk=None):
             # appliquée automatiquement à l'enregistrement (y compris depuis
             # l'admin Django), vit dans SousTypeBrique.clean().
             formule = request.POST.get("formule_calcul", "")
+            formule_predefinie_id = request.POST.get("formule_predefinie")
+            if formule_predefinie_id:
+                formule_predefinie = models.Formule.objects.filter(pk=formule_predefinie_id).first()
+                if formule_predefinie:
+                    formule = formule_predefinie.expression
+            if not formule.strip():
+                type_id = request.POST.get("type_brique")
+                nom_sous_type = request.POST.get("nom", "")
+                type_brique = models.TypeBrique.objects.filter(pk=type_id).first()
+                if type_brique:
+                    formule_type = type_brique.formule_pour_sous_type_nom(nom_sous_type)
+                    if formule_type:
+                        formule = formule_type.expression
             try:
                 variables = {
                     **VALEURS_EXEMPLE,
@@ -198,6 +234,14 @@ def sous_type_form(request, pk=None):
             except ValueError:
                 resultat_test = (False, "Dimensions ou taux de chute invalides.")
             else:
+                if not formule.strip():
+                    resultat_test = (False, "Aucune formule fournie : saisissez une formule ou choisissez une formule prédéfinie.")
+                    return render(request, "core/sous_type_form.html", {
+                        "form": form,
+                        "instance": instance,
+                        "resultat_test": resultat_test,
+                        "valeurs_exemple": VALEURS_EXEMPLE,
+                    })
                 resultat_test = evaluer_formule(formule, variables)
 
         elif action == "enregistrer":
@@ -340,6 +384,21 @@ def _calculer_besoin_pour_sous_type(campagne, zone, sous_type, diametre, epaisse
     return True, round(resultat_reel, 2)
 
 
+def _sous_types_associes_a_calculer(sous_type):
+    """
+    Sous-types à recalculer ensemble :
+    - le sous-type demandé,
+    - ses liens explicites (compatibilité existante),
+    - tous les sous-types de la même famille (TypeBrique), ex. X/Y/X1/Y1.
+    """
+    ids = {sous_type.id}
+    ids.update(sous_type.sous_types_lies.values_list("id", flat=True))
+    ids.update(
+        models.SousTypeBrique.objects.filter(type_brique=sous_type.type_brique).values_list("id", flat=True)
+    )
+    return models.SousTypeBrique.objects.filter(id__in=ids).select_related("type_brique").order_by("nom")
+
+
 def campagne_calculer_besoin(request, pk, zone_pk):
     campagne = get_object_or_404(models.Campagne, pk=pk)
     zone = get_object_or_404(models.Zone, pk=zone_pk, campagnes=campagne)
@@ -367,15 +426,16 @@ def campagne_calculer_besoin(request, pk, zone_pk):
             else:
                 messages_succes = [f"« {sous_type} » : {resultat} pièces"]
 
-                # Sous-types liés (ex. X/Y toujours utilisés ensemble) :
-                # calculés automatiquement avec la même géométrie, pour ne
-                # jamais oublier la moitié d'une paire.
-                for lie in sous_type.sous_types_lies.all():
+                # Sous-types de même famille (ex. X, Y, X1, Y1) + liens explicites :
+                # calculés automatiquement avec la même géométrie.
+                for lie in _sous_types_associes_a_calculer(sous_type):
+                    if lie.id == sous_type.id:
+                        continue
                     ok_lie, resultat_lie = _calculer_besoin_pour_sous_type(campagne, zone, lie, diametre, epaisseur)
                     if ok_lie:
-                        messages_succes.append(f"« {lie} » (lié) : {resultat_lie} pièces")
+                        messages_succes.append(f"« {lie} » (famille) : {resultat_lie} pièces")
                     else:
-                        messages.warning(request, f"Sous-type lié non calculé — {resultat_lie}")
+                        messages.warning(request, f"Sous-type de la famille non calculé — {resultat_lie}")
 
                 messages.success(request, "Besoin calculé — " + " ; ".join(messages_succes))
                 return redirect("core:campagne_detail", pk=campagne.pk)

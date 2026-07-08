@@ -14,7 +14,7 @@ class SousTypeBriqueInline(admin.TabularInline):
 
 @admin.register(models.TypeBrique)
 class TypeBriqueAdmin(admin.ModelAdmin):
-    list_display = ("nom", "fournisseur_defaut", "nb_sous_types")
+    list_display = ("nom", "fournisseur_defaut", "nb_sous_types", "formule_sous_type_1", "formule_sous_type_2", "formule_sous_type_3", "formule_sous_type_4")
     inlines = [SousTypeBriqueInline]
 
     def nb_sous_types(self, obj):
@@ -24,8 +24,13 @@ class TypeBriqueAdmin(admin.ModelAdmin):
 
 @admin.register(models.SousTypeBrique)
 class SousTypeBriqueAdmin(admin.ModelAdmin):
-    list_display = ("type_brique", "nom", "format", "taux_chute", "poids_unitaire")
+    list_display = ("type_brique", "nom", "format", "formule_predefinie", "taux_chute", "poids_unitaire")
     list_filter = ("format", "type_brique")
+
+
+@admin.register(models.Formule)
+class FormuleAdmin(admin.ModelAdmin):
+    list_display = ("nom",)
 
 
 @admin.register(models.Zone)
