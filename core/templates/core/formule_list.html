@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Formules{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Formules prédéfinies</h2>
+  {% if formules %}
+  <table>
+    <tr><th>Nom</th><th>Expression</th><th></th></tr>
+    {% for formule in formules %}
+    <tr>
+      <td>{{ formule.nom }}</td>
+      <td class="muted">{{ formule.expression|truncatechars:90 }}</td>
+      <td>
+        <a href="{% url 'core:formule_update' formule.pk %}">Modifier</a> ·
+        <a href="{% url 'core:formule_delete' formule.pk %}">Supprimer</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="empty">Aucune formule enregistrée.</p>
+  {% endif %}
+  <div class="btn-row">
+    <a class="btn" href="{% url 'core:formule_create' %}">+ Nouvelle formule</a>
+    <a class="btn btn-secondary" href="{% url 'core:type_brique_create' %}">Configurer un type de brique</a>
+  </div>
+</div>
+{% endblock %}

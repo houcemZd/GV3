@@ -22,6 +22,11 @@ urlpatterns = [
     path("types-briques/<int:pk>/modifier/", views.type_brique_form, name="type_brique_update"),
     path("types-briques/<int:pk>/supprimer/", views.type_brique_delete, name="type_brique_delete"),
 
+    path("formules/", views.formule_list, name="formule_list"),
+    path("formules/nouvelle/", views.formule_form, name="formule_create"),
+    path("formules/<int:pk>/modifier/", views.formule_form, name="formule_update"),
+    path("formules/<int:pk>/supprimer/", views.formule_delete, name="formule_delete"),
+
     path("sous-types-briques/", views.sous_type_list, name="sous_type_list"),
     path("sous-types-briques/nouveau/", views.sous_type_form, name="sous_type_create"),
     path("sous-types-briques/<int:pk>/modifier/", views.sous_type_form, name="sous_type_update"),

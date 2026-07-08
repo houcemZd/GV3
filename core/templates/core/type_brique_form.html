@@ -4,8 +4,8 @@
 <div class="card">
   <h2>{% if instance %}Modifier le type de brique{% else %}Nouveau type de brique{% endif %}</h2>
   <p class="helptext">
-    Ceci est juste la famille (nom + fournisseur). Les dimensions, la formule de calcul et le taux de chute
-    se configurent au niveau des sous-types.
+    Définissez ici la famille (nom + fournisseur) et les 4 formules ST-1 à ST-4
+    qui seront automatiquement proposées/appliquées aux sous-types du type.
   </p>
   <form method="post">
     {% csrf_token %}

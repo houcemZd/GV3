@@ -144,11 +144,34 @@ def zone_delete(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# TypeBrique (famille — nom + fournisseur seulement)
+# Formules prédéfinies
+# ---------------------------------------------------------------------------
+
+def formule_list(request):
+    return render(request, "core/formule_list.html", {"formules": models.Formule.objects.all()})
+
+
+def formule_form(request, pk=None):
+    instance = get_object_or_404(models.Formule, pk=pk) if pk else None
+    return _simple_crud_form(
+        request, model=models.Formule, form_class=forms.FormuleForm, instance=instance,
+        template="core/formule_form.html", list_url_name="formule_list", success_message="Formule enregistrée.",
+    )
+
+
+def formule_delete(request, pk):
+    formule = get_object_or_404(models.Formule, pk=pk)
+    return _simple_delete(request, obj=formule, template="core/confirm_delete.html", list_url_name="formule_list")
+
+
+# ---------------------------------------------------------------------------
+# TypeBrique (famille + mapping formules ST-1..ST-4)
 # ---------------------------------------------------------------------------
 
 def type_brique_list(request):
-    types = models.TypeBrique.objects.prefetch_related("sous_types")
+    types = models.TypeBrique.objects.prefetch_related("sous_types").select_related(
+        "formule_sous_type_1", "formule_sous_type_2", "formule_sous_type_3", "formule_sous_type_4"
+    )
     return render(request, "core/type_brique_list.html", {"types": types})
 
 
@@ -170,7 +193,7 @@ def type_brique_delete(request, pk):
 # ---------------------------------------------------------------------------
 
 def sous_type_list(request):
-    sous_types = models.SousTypeBrique.objects.select_related("type_brique").prefetch_related("sous_types_lies")
+    sous_types = models.SousTypeBrique.objects.select_related("type_brique", "formule_predefinie").prefetch_related("sous_types_lies")
     return render(request, "core/sous_type_list.html", {"sous_types": sous_types})
 
 
@@ -187,6 +210,19 @@ def sous_type_form(request, pk=None):
             # appliquée automatiquement à l'enregistrement (y compris depuis
             # l'admin Django), vit dans SousTypeBrique.clean().
             formule = request.POST.get("formule_calcul", "")
+            formule_predefinie_id = request.POST.get("formule_predefinie")
+            if formule_predefinie_id:
+                formule_predefinie = models.Formule.objects.filter(pk=formule_predefinie_id).first()
+                if formule_predefinie:
+                    formule = formule_predefinie.expression
+            if not formule.strip():
+                type_id = request.POST.get("type_brique")
+                nom_sous_type = request.POST.get("nom", "")
+                type_brique = models.TypeBrique.objects.filter(pk=type_id).first()
+                if type_brique:
+                    formule_type = type_brique.formule_pour_sous_type_nom(nom_sous_type)
+                    if formule_type:
+                        formule = formule_type.expression
             try:
                 variables = {
                     **VALEURS_EXEMPLE,
@@ -198,6 +234,14 @@ def sous_type_form(request, pk=None):
             except ValueError:
                 resultat_test = (False, "Dimensions ou taux de chute invalides.")
             else:
+                if not formule.strip():
+                    resultat_test = (False, "Aucune formule fournie : saisissez une formule ou choisissez une formule prédéfinie.")
+                    return render(request, "core/sous_type_form.html", {
+                        "form": form,
+                        "instance": instance,
+                        "resultat_test": resultat_test,
+                        "valeurs_exemple": VALEURS_EXEMPLE,
+                    })
                 resultat_test = evaluer_formule(formule, variables)
 
         elif action == "enregistrer":
