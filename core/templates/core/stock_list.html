@@ -3,22 +3,25 @@
 {% block content %}
 <div class="card">
   <h2>Stock magasin</h2>
+  <p class="subtitle">Vue globale des quantités disponibles et du niveau d'alerte par type de brique.</p>
   {% if stocks %}
-  <table>
-    <tr><th>Type de brique</th><th>Quantité actuelle</th><th>Seuil mini</th><th>Alerte</th></tr>
-    {% for s in stocks %}
-    <tr>
-      <td>{{ s.sous_type_brique }}</td>
-      <td>{{ s.quantite_actuelle }}</td>
-      <td>{{ s.seuil_mini }}</td>
-      <td>
-        {% if s.negatif %}<span class="tag tag-rouge">stock négatif</span>
-        {% elif s.sous_seuil %}<span class="tag tag-orange">sous seuil</span>
-        {% else %}<span class="tag tag-vert">OK</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Type de brique</th><th>Quantité actuelle</th><th>Seuil mini</th><th>Alerte</th></tr>
+      {% for s in stocks %}
+      <tr>
+        <td>{{ s.sous_type_brique }}</td>
+        <td>{{ s.quantite_actuelle }}</td>
+        <td>{{ s.seuil_mini }}</td>
+        <td>
+          {% if s.negatif %}<span class="tag tag-rouge">stock négatif</span>
+          {% elif s.sous_seuil %}<span class="tag tag-orange">sous seuil</span>
+          {% else %}<span class="tag tag-vert">OK</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
   {% else %}
     <p class="empty">Aucun stock enregistré pour le moment.</p>
   {% endif %}
