@@ -217,6 +217,16 @@ class SousTypePaireTests(TestCase):
             longueur=200, largeur=69, hauteur=74, poids_unitaire=8.6,
             formule_calcul="diametre / longueur * 1.05",
         )
+        self.brique_x1 = models.SousTypeBrique.objects.create(
+            type_brique=type_brique, nom="X1", format="cintree",
+            longueur=198, largeur=67, hauteur=76, poids_unitaire=8.2,
+            formule_calcul="diametre / longueur * 0.98",
+        )
+        self.brique_y1 = models.SousTypeBrique.objects.create(
+            type_brique=type_brique, nom="Y1", format="cintree",
+            longueur=202, largeur=70, hauteur=75, poids_unitaire=8.4,
+            formule_calcul="diametre / longueur * 1.02",
+        )
         self.brique_x.sous_types_lies.add(self.brique_y)
 
         self.campagne = models.Campagne.objects.create(four=self.four, date_debut="2026-01-01")
@@ -237,6 +247,15 @@ class SousTypePaireTests(TestCase):
             models.BesoinTheorique.objects.filter(sous_type_brique=self.brique_y).exists(),
             "Le sous-type lié Y aurait dû être calculé automatiquement avec X",
         )
+
+    def test_calculer_besoin_pour_x_calcule_toute_la_famille(self):
+        response = self.client.post(
+            f"/campagnes/{self.campagne.id}/zones/{self.zone.id}/calculer/",
+            {"sous_type_brique": self.brique_x.id, "diametre_utilise": "4500", "epaisseur_garnissage_utilisee": "200"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(models.BesoinTheorique.objects.filter(sous_type_brique=self.brique_x1).exists())
+        self.assertTrue(models.BesoinTheorique.objects.filter(sous_type_brique=self.brique_y1).exists())
 
     def test_pas_de_paire_manquante_apres_calcul(self):
         self.client.post(

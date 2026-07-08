@@ -5,7 +5,7 @@
   <h2>{% if instance %}Modifier le sous-type{% else %}Nouveau sous-type de brique{% endif %}</h2>
   <p class="helptext">
     Variables disponibles dans la formule : diametre, longueur_zone, epaisseur (valeurs de la campagne),
-    longueur, largeur, hauteur, taux_chute (valeurs de ce sous-type), PI.
+    longueur (X), largeur (Y), hauteur (Z), taux_chute (valeurs de ce sous-type), PI.
   </p>
   <form method="post">
     {% csrf_token %}

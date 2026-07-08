@@ -340,6 +340,21 @@ def _calculer_besoin_pour_sous_type(campagne, zone, sous_type, diametre, epaisse
     return True, round(resultat_reel, 2)
 
 
+def _sous_types_associes_a_calculer(sous_type):
+    """
+    Sous-types à recalculer ensemble :
+    - le sous-type demandé,
+    - ses liens explicites (compatibilité existante),
+    - tous les sous-types de la même famille (TypeBrique), ex. X/Y/X1/Y1.
+    """
+    ids = {sous_type.id}
+    ids.update(sous_type.sous_types_lies.values_list("id", flat=True))
+    ids.update(
+        models.SousTypeBrique.objects.filter(type_brique=sous_type.type_brique).values_list("id", flat=True)
+    )
+    return models.SousTypeBrique.objects.filter(id__in=ids).select_related("type_brique").order_by("nom")
+
+
 def campagne_calculer_besoin(request, pk, zone_pk):
     campagne = get_object_or_404(models.Campagne, pk=pk)
     zone = get_object_or_404(models.Zone, pk=zone_pk, campagnes=campagne)
@@ -367,15 +382,16 @@ def campagne_calculer_besoin(request, pk, zone_pk):
             else:
                 messages_succes = [f"« {sous_type} » : {resultat} pièces"]
 
-                # Sous-types liés (ex. X/Y toujours utilisés ensemble) :
-                # calculés automatiquement avec la même géométrie, pour ne
-                # jamais oublier la moitié d'une paire.
-                for lie in sous_type.sous_types_lies.all():
+                # Sous-types de même famille (ex. X, Y, X1, Y1) + liens explicites :
+                # calculés automatiquement avec la même géométrie.
+                for lie in _sous_types_associes_a_calculer(sous_type):
+                    if lie.id == sous_type.id:
+                        continue
                     ok_lie, resultat_lie = _calculer_besoin_pour_sous_type(campagne, zone, lie, diametre, epaisseur)
                     if ok_lie:
-                        messages_succes.append(f"« {lie} » (lié) : {resultat_lie} pièces")
+                        messages_succes.append(f"« {lie} » (famille) : {resultat_lie} pièces")
                     else:
-                        messages.warning(request, f"Sous-type lié non calculé — {resultat_lie}")
+                        messages.warning(request, f"Sous-type de la famille non calculé — {resultat_lie}")
 
                 messages.success(request, "Besoin calculé — " + " ; ".join(messages_succes))
                 return redirect("core:campagne_detail", pk=campagne.pk)

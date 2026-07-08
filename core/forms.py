@@ -45,6 +45,9 @@ class SousTypeBriqueForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["longueur"].label = "Dimension X (mm)"
+        self.fields["largeur"].label = "Dimension Y (mm)"
+        self.fields["hauteur"].label = "Dimension Z (mm)"
         queryset = models.SousTypeBrique.objects.select_related("type_brique")
         if self.instance and self.instance.pk:
             queryset = queryset.exclude(pk=self.instance.pk)
